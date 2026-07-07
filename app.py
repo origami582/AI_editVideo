@@ -100,6 +100,7 @@ def upload_file():
 def fetch_info():
     data = request.get_json() or {}
     url = data.get('url')
+    cookies_browser = data.get('cookies_browser', 'none')
     if not url:
         return jsonify({'error': 'URL is required'}), 400
         
@@ -109,6 +110,13 @@ def fetch_info():
             'skip_download': True,
             'ffmpeg_location': ffmpeg_bin if os.path.exists(ffmpeg_bin) else None
         }
+        
+        # Check if local cookies.txt exists
+        if os.path.exists('cookies.txt'):
+            ydl_opts['cookiefile'] = 'cookies.txt'
+        elif cookies_browser and cookies_browser != 'none':
+            ydl_opts['cookiesfrombrowser'] = (cookies_browser,)
+            
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
@@ -128,7 +136,19 @@ def fetch_info():
             'uploader': info.get('uploader', 'Unknown')
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        err_msg = str(e)
+        if "Could not copy" in err_msg and "cookie database" in err_msg:
+            err_msg = (
+                "ไม่สามารถดึงข้อมูล Cookies จากบราวเซอร์ที่ระบุได้ค่ะ คาดว่าเกิดจากบราวเซอร์กำลังเปิดใช้งานอยู่ (ไฟล์ถูกล็อก) "
+                "กรุณาลองปิดบราวเซอร์ให้สนิทก่อน หรือส่งออกคุกกี้ใส่ไฟล์ตั้งชื่อว่า cookies.txt แล้วนำมาวางในโฟลเดอร์ของโปรแกรมแทนนะคะ 💙"
+            )
+        elif "Sign in to confirm you’re not a bot" in err_msg:
+            err_msg = (
+                "YouTube บล็อคการดาวน์โหลดเนื่องจากตรวจจับว่าเป็นบอทค่ะ 😭 "
+                "กรุณาเลือกบราวเซอร์ในตัวเลือก 'บราวเซอร์ที่ใช้ส่ง Cookies' (และปิดบราวเซอร์นั้นก่อนกด) "
+                "หรือนำไฟล์ cookies.txt มาวางไว้ในโฟลเดอร์ของโปรแกรมเพื่อยืนยันตัวตนนะคะ 💙"
+            )
+        return jsonify({'error': err_msg}), 400
 
 def time_to_seconds(t_str):
     if t_str is None or t_str == "":
@@ -153,6 +173,7 @@ def time_to_seconds(t_str):
 def download_url():
     data = request.get_json() or {}
     url = data.get('url')
+    cookies_browser = data.get('cookies_browser', 'none')
     start_time = data.get('start_time')
     end_time = data.get('end_time')
     
@@ -183,6 +204,12 @@ def download_url():
             'socket_timeout': 30
         }
         
+        # Check if local cookies.txt exists
+        if os.path.exists('cookies.txt'):
+            ydl_opts['cookiefile'] = 'cookies.txt'
+        elif cookies_browser and cookies_browser != 'none':
+            ydl_opts['cookiesfrombrowser'] = (cookies_browser,)
+            
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             final_filepath = ydl.prepare_filename(info)
@@ -226,7 +253,19 @@ def download_url():
             'filename': filename
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        err_msg = str(e)
+        if "Could not copy" in err_msg and "cookie database" in err_msg:
+            err_msg = (
+                "ไม่สามารถดึงข้อมูล Cookies จากบราวเซอร์ที่ระบุได้ค่ะ คาดว่าเกิดจากบราวเซอร์กำลังเปิดใช้งานอยู่ (ไฟล์ถูกล็อก) "
+                "กรุณาลองปิดบราวเซอร์ให้สนิทก่อน หรือส่งออกคุกกี้ใส่ไฟล์ตั้งชื่อว่า cookies.txt แล้วนำมาวางในโฟลเดอร์ของโปรแกรมแทนนะคะ 💙"
+            )
+        elif "Sign in to confirm you’re not a bot" in err_msg:
+            err_msg = (
+                "YouTube บล็อคการดาวน์โหลดเนื่องจากตรวจจับว่าเป็นบอทค่ะ 😭 "
+                "กรุณาเลือกบราวเซอร์ในตัวเลือก 'บราวเซอร์ที่ใช้ส่ง Cookies' (และปิดบราวเซอร์นั้นก่อนกด) "
+                "หรือนำไฟล์ cookies.txt มาวางไว้ในโฟลเดอร์ของโปรแกรมเพื่อยืนยันตัวตนนะคะ 💙"
+            )
+        return jsonify({'error': err_msg}), 500
 
 @app.route('/process', methods=['POST'])
 def process_video():

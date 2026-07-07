@@ -821,6 +821,20 @@
                         <button type="button" id="btn-fetch-info" class="btn-submit" style="margin-top: 0; width: auto; padding: 0 1.5rem; font-family: inherit; font-size: 0.95rem; flex-shrink: 0; border-radius: 8px;">🔍 ดึงข้อมูล</button>
                     </div>
                 </div>
+                <div class="form-group full-width" style="text-align: left; margin-top: 0.75rem; margin-bottom: 0px;">
+                    <label for="cookies-browser" style="font-size: 0.85rem; color: var(--text-muted);">🍪 บราวเซอร์ที่ใช้ดึง Cookies (กรณีติดปัญหายืนยันตัวตน/บอท):</label>
+                    <select id="cookies-browser" style="width: 100%; margin-top: 4px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: inherit; font-size: 0.85rem; outline: none;">
+                        <option value="none" selected>❌ ไม่ส่งคุกกี้ (None - Default)</option>
+                        <option value="chrome">🌐 Google Chrome (แนะนำ)</option>
+                        <option value="edge">🌐 Microsoft Edge</option>
+                        <option value="firefox">🦊 Mozilla Firefox</option>
+                        <option value="brave">🦁 Brave</option>
+                        <option value="opera">🅾️ Opera</option>
+                    </select>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.35;">
+                        * <u>คำแนะนำ</u>: หากพบบ็อค ให้เลือกบราวเซอร์ที่เซนเซล็อกอินบัญชี YouTube ค้างไว้ และ **กรุณาปิดบราวเซอร์นั้นก่อนกดปุ่ม** เพื่อป้องกันความขัดแย้งของไฟล์ค่ะ หรืออีกวิธีคือวางไฟล์ <code>cookies.txt</code> ไว้ในโฟลเดอร์ของโครงการได้เลยค่ะ 💙
+                    </div>
+                </div>
 
                 <!-- Video Details Card (appears after fetch) -->
                 <div id="url-video-card" style="display: none; margin-top: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); border-radius: 16px; padding: 1.25rem; text-align: left; transition: all 0.3s;">
@@ -1389,10 +1403,14 @@
             urlVideoCard.style.display = 'none';
             
             try {
+                const cookiesBrowser = document.getElementById('cookies-browser').value;
                 const response = await fetch('/fetch_info', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url })
+                    body: JSON.stringify({ 
+                        url: url,
+                        cookies_browser: cookiesBrowser
+                    })
                 });
                 
                 if (!response.ok) {
@@ -1449,13 +1467,15 @@
             urlStatusMessage.textContent = 'กำลังดาวน์โหลดไฟล์วิดีโอเข้าระบบ... ขั้นตอนนี้อาจใช้เวลาสักครู่ค่ะ 💙';
             
             try {
+                const cookiesBrowser = document.getElementById('cookies-browser').value;
                 const response = await fetch('/download_url', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         url: url,
                         start_time: startTime,
-                        end_time: endTime
+                        end_time: endTime,
+                        cookies_browser: cookiesBrowser
                     })
                 });
                 
