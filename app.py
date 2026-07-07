@@ -185,8 +185,8 @@ def download_url():
         ydl_opts = {
             'ffmpeg_location': ffmpeg_bin if os.path.exists(ffmpeg_bin) else None,
             'outtmpl': out_tmpl,
-            # Prefer fast pre-merged formats like mp4 to avoid slow merges and connection drops
-            'format': 'best[ext=mp4]/best',
+            # Fallback format string: tries best mp4 video + m4a audio, then any best video + audio (which it will merge to mp4), and finally best single stream.
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'overwrites': True,
             'retries': 10,
