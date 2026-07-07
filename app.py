@@ -107,7 +107,9 @@ def fetch_info():
         import yt_dlp
         ydl_opts = {
             'skip_download': True,
-            'ffmpeg_location': ffmpeg_bin if os.path.exists(ffmpeg_bin) else None
+            'ffmpeg_location': ffmpeg_bin if os.path.exists(ffmpeg_bin) else None,
+            'js_runtimes': {'node': {}},
+            'remote_components': 'ejs:github',
         }
         
         # Check if local cookies.txt exists
@@ -191,7 +193,9 @@ def download_url():
             'overwrites': True,
             'retries': 10,
             'fragment_retries': 10,
-            'socket_timeout': 30
+            'socket_timeout': 30,
+            'js_runtimes': {'node': {}},
+            'remote_components': 'ejs:github',
         }
         
         # Check if local cookies.txt exists
