@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+uploads/*
+!uploads/.gitkeep
+outputs/*
+!outputs/.gitkeep
+*.mp4
+*.wav
+*.ass
+*.srt
+*.log
+.DS_Store

@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arona Auto-Shorts Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --surface-color: rgba(22, 26, 39, 0.65);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --primary: #00d5ff;
+            --primary-rgb: 0, 213, 255;
+            --secondary: #a200ff;
+            --secondary-rgb: 162, 0, 255;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(var(--primary-rgb), 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(var(--secondary-rgb), 0.08) 0%, transparent 45%);
+            background-attachment: fixed;
+            padding: 2rem 1rem;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 650px;
+            margin: auto;
+        }
+
+        /* Brand Header */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .brand-logo {
+            display: inline-flex;
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-sub {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+            font-weight: 400;
+        }
+
+        /* Cards Design */
+        .card {
+            background: var(--surface-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--surface-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(var(--primary-rgb), 0.15);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+        }
+
+        /* Step 1: File Drop Zone */
+        .drop-zone {
+            border: 2px dashed rgba(var(--primary-rgb), 0.25);
+            border-radius: 16px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.01);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: rgba(var(--primary-rgb), 0.03);
+            box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.15);
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--secondary);
+            background: rgba(var(--secondary-rgb), 0.03);
+            box-shadow: 0 0 20px rgba(var(--secondary-rgb), 0.15);
+        }
+
+        .zone-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .zone-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .zone-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* File Card Info */
+        .file-card {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--surface-border);
+            padding: 1rem 1.25rem;
+            border-radius: 14px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .file-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .file-icon {
+            font-size: 1.8rem;
+        }
+
+        .file-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 320px;
+        }
+
+        .file-size {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        /* Step 2: Settings Grouping */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--surface-border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.25s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.2);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* Collapsible Advanced Section */
+        .advanced-toggle {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--surface-border);
+            padding-top: 1.25rem;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .toggle-btn:hover {
+            color: var(--primary);
+        }
+
+        .toggle-icon {
+            font-size: 0.7rem;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.open {
+            transform: rotate(90deg);
+        }
+
+        .advanced-fields {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-top: 1.25rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Range Slider Styling */
+        .slider-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            accent-color: var(--primary);
+        }
+
+        .slider-val {
+            font-weight: 700;
+            min-width: 45px;
+            text-align: right;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        /* CTA Button */
+        .btn-submit {
+            width: 100%;
+            padding: 1.1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 16px;
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(var(--primary-rgb), 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 0 25px rgba(var(--primary-rgb), 0.3),
+                0 0 35px rgba(var(--secondary-rgb), 0.3);
+        }
+
+        .btn-submit:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Step 3: Elegant Processing State */
+        .progress-box {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .spinner-ring {
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid rgba(255, 255, 255, 0.08);
+            border-top: 2.5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .percent-text {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .step-row.active {
+            color: var(--primary);
+            background: rgba(var(--primary-rgb), 0.04);
+            font-weight: 600;
+        }
+
+        .step-row.done {
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.04);
+        }
+
+        .step-marker {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-row.active .step-marker {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4);
+        }
+
+        .step-row.done .step-marker {
+            border-color: var(--success);
+            background: var(--success);
+            color: var(--bg-color);
+        }
+
+        /* Step 4: Result Container */
+        .result-box {
+            display: none;
+            text-align: center;
+            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .success-banner {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .player-wrapper {
+            max-width: 320px;
+            margin: 0 auto 1.5rem auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            border: 2px solid var(--surface-border);
+            background: #000;
+            aspect-ratio: 9/16;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 1rem 2.5rem;
+            background: var(--success);
+            border: none;
+            border-radius: 14px;
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding-bottom: 2rem;
+        }
+
+        /* Subtitle Editor Styling */
+        .sub-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--surface-border);
+            padding: 1rem;
+            border-radius: 16px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .sub-row:hover {
+            border-color: rgba(var(--primary-rgb), 0.2);
+        }
+        .sub-row:focus-within {
+            border-color: var(--primary);
+            background: rgba(var(--primary-rgb), 0.02);
+        }
+        .sub-row-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .sub-time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .time-input-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.2px;
+        }
+        .time-num-input {
+            width: 75px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 0.3rem 0.5rem;
+            color: var(--primary);
+            font-family: monospace;
+            font-size: 0.85rem;
+            outline: none;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .time-num-input:focus {
+            border-color: var(--primary);
+        }
+        .sub-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sub-input {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 0.55rem 0.75rem;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .sub-input:focus {
+            border-color: var(--primary);
+        }
+        .btn-delete-sub {
+            background: rgba(239, 68, 68, 0.1);
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.55rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-delete-sub:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+        .btn-add-sub {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed var(--surface-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+        .btn-add-sub:hover {
+            background: rgba(var(--primary-rgb), 0.05);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        #subtitles-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        #subtitles-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.01);
+            border-radius: 3px;
+        }
+        #subtitles-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        #subtitles-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(var(--primary-rgb), 0.4);
+        }
+
+        @media (max-width: 550px) {
+            .settings-grid, .advanced-fields {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+        /* Range Slider Container & Handles */
+        .range-slider-container {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .range-slider {
+            position: relative;
+            width: 100%;
+            height: 10px;
+            margin: 1.4rem 0 1rem;
+        }
+
+        .slider-track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        .range-slider input[type="range"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: none;
+            pointer-events: none;
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+            z-index: 2;
+            outline: none;
+        }
+
+        /* Chrome, Safari, Opera, Edge */
+        .range-slider input[type="range"]::-webkit-slider-thumb {
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            pointer-events: auto;
+            -webkit-appearance: none;
+            box-shadow: 0 0 12px rgba(92, 206, 255, 0.8);
+            border: 2px solid #ffffff;
+            transition: transform 0.1s ease;
+        }
+
+        .range-slider input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Firefox */
+        .range-slider input[type="range"]::-moz-range-thumb {
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 0 12px rgba(92, 206, 255, 0.8);
+            border: 2px solid #ffffff;
+            transition: transform 0.1s ease;
+        }
+
+        .range-slider input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <span class="brand-logo">💙</span>
+            <h1>Arona Shorts Editor</h1>
+            <p class="brand-sub">ตัดแบ่งส่วนเงียบอัตโนมัติ พร้อมทำซับแบบเน้นคำสไตล์ Shorts ยอดฮิตในคลิกเดียว ✨</p>
+        </header>
+
+        <!-- Step 1: Upload -->
+        <section class="card">
+            <div class="card-title"><span>1.</span> เลือกแหล่งที่มาของวิดีโอ (Select Video Source)</div>
+            
+            <!-- Tabs Menu -->
+            <div style="display: flex; gap: 8px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.25); padding: 5px; border-radius: 14px; border: 1px solid var(--surface-border);">
+                <button type="button" id="tab-local" style="flex: 1; padding: 0.65rem; border: none; border-radius: 10px; background: var(--primary); color: var(--bg-color); font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">📁 อัปโหลดจากเครื่อง</button>
+                <button type="button" id="tab-link" style="flex: 1; padding: 0.65rem; border: none; border-radius: 10px; background: transparent; color: var(--text-main); font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit;">🔗 ดาวน์โหลดจากลิงก์</button>
+            </div>
+
+            <!-- Upload File Area -->
+            <div id="local-upload-area">
+                <div id="drop-zone" class="drop-zone">
+                    <span class="zone-icon">📥</span>
+                    <span class="zone-title">ลากไฟล์วิดีโอของคุณมาวางที่นี่</span>
+                    <span class="zone-desc">หรือคลิกเพื่อเปิดหาไฟล์จากเครื่องคอมพิวเตอร์</span>
+                    <input type="file" id="file-input" accept="video/*">
+                </div>
+
+                <!-- Uploaded file details -->
+                <div id="file-info" class="file-card">
+                    <div class="file-meta">
+                        <span class="file-icon">🎬</span>
+                        <div>
+                            <div class="file-name" id="info-name">video_filename.mp4</div>
+                            <div class="file-size" id="info-size">0.0 MB</div>
+                        </div>
+                    </div>
+                    <button class="btn-delete" id="btn-remove">ลบไฟล์ 🗑️</button>
+                </div>
+            </div>
+
+            <!-- Download URL Area -->
+            <div id="url-download-area" style="display: none;">
+                <div class="form-group full-width" style="text-align: left; margin-bottom: 0px;">
+                    <label for="video-url">ป้อนลิงก์วิดีโอ (YouTube, TikTok, Facebook, etc.)</label>
+                    <div style="display: flex; gap: 8px; margin-top: 0.5rem;">
+                        <input type="text" id="video-url" placeholder="https://www.youtube.com/watch?v=..." style="flex-grow: 1; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 0.75rem; color: #fff; outline: none; font-size: 0.95rem; font-family: inherit;">
+                        <button type="button" id="btn-fetch-info" class="btn-submit" style="margin-top: 0; width: auto; padding: 0 1.5rem; font-family: inherit; font-size: 0.95rem; flex-shrink: 0; border-radius: 8px;">🔍 ดึงข้อมูล</button>
+                    </div>
+                </div>
+
+                <!-- Video Details Card (appears after fetch) -->
+                <div id="url-video-card" style="display: none; margin-top: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); border-radius: 16px; padding: 1.25rem; text-align: left; transition: all 0.3s;">
+                    <!-- Expanded Video Display (Centered & Large) -->
+                    <div id="url-preview-wrapper" style="position: relative; width: 100%; max-width: 440px; aspect-ratio: 16/9; margin: 0 auto 1.25rem auto; overflow: hidden; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: #000; box-shadow: 0 8px 24px rgba(0,0,0,0.4); user-select: none;">
+                        <img id="url-thumbnail" src="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                        <iframe id="url-iframe" style="display: none; width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+
+                    <!-- Metadata Details -->
+                    <div style="margin-bottom: 1.25rem;">
+                        <div id="url-title" style="font-weight: 700; font-size: 1.05rem; color: #fff; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">Video Title</div>
+                        <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">
+                            <span>👤 ช่อง: <span id="url-uploader" style="color: var(--primary); font-weight: 600;">Uploader</span></span>
+                            <span>⏱️ ความยาวคลิป: <span id="url-duration" style="color: var(--primary); font-weight: 600;">00:00</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Trimming Dual Range Slider -->
+                    <div style="margin-top: 1rem; border-top: 1px dashed var(--surface-border); padding-top: 1rem;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.5rem; text-align: left;">⏱️ เลื่อนเพื่อกำหนดช่วงคลิปที่ต้องการ (Drag to Trim Range)</label>
+                        
+                        <!-- Dual Range Track -->
+                        <div class="range-slider-container">
+                            <div class="range-slider">
+                                <div id="url-slider-track" class="slider-track"></div>
+                                <input type="range" id="url-slider-start" min="0" max="100" value="0" step="0.1">
+                                <input type="range" id="url-slider-end" min="0" max="100" value="100" step="0.1">
+                            </div>
+                            <div class="slider-labels">
+                                <span id="url-slider-start-label">00:00</span>
+                                <span id="url-slider-end-label">00:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Manual text input sync boxes -->
+                        <div style="display: flex; gap: 12px; margin-top: 1rem;">
+                            <div style="flex: 1; text-align: left;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">เวลาเริ่ม:</span>
+                                <input type="text" id="url-start-time" placeholder="เช่น 00:00" style="width: 100%; margin-top: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: monospace; font-size: 0.85rem; outline: none; text-align: center;">
+                            </div>
+                            <div style="flex: 1; text-align: left;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">เวลาสิ้นสุด:</span>
+                                <input type="text" id="url-end-time" placeholder="เช่น ทั้งหมด" style="width: 100%; margin-top: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem; color: #fff; font-family: monospace; font-size: 0.85rem; outline: none; text-align: center;">
+                            </div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--primary); margin-top: 0.6rem; text-align: left;">* วิดีโอจะทำการ Seek ไปยังช่วงเวลานั้นๆ อัตโนมัติเมื่อเซนเซเลื่อนแถบค่ะ (ความยาวทั้งหมด: <span id="url-total-duration-hint">00:00</span>) 💙</div>
+                    </div>
+
+
+
+                    <button type="button" id="btn-download-url" class="btn-submit" style="margin-top: 1.25rem; background: var(--success); box-shadow: 0 4px 15px rgba(16,185,129,0.2); border-radius: 12px; font-family: inherit;">
+                        <span>⬇️</span> ดาวน์โหลดวิดีโอเข้าระบบ
+                    </button>
+                </div>
+                
+                <!-- Download Status Card -->
+                <div id="url-download-status" style="display: none; margin-top: 1rem; text-align: center; padding: 1.25rem; border-radius: 16px; background: rgba(255,255,255,0.01); border: 1px solid var(--surface-border);">
+                    <div class="spinner-ring" style="margin: 0 auto 0.75rem auto;"></div>
+                    <div id="url-status-message" style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">กำลังดาวน์โหลดวิดีโอ...</div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- Step 2: Simplified Settings -->
+        <section class="card">
+            <div class="card-title"><span>2.</span> ตั้งค่าภาษาและรูปแบบซับ (Language Settings)</div>
+            
+            <div class="settings-grid">
+                <div class="form-group full-width" style="margin-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="cut-silence-checkbox" checked style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                        <label for="cut-silence-checkbox" style="cursor: pointer; font-size: 0.95rem; color: #fff; font-weight: 700;">✂️ ตัดส่วนเงียบอัตโนมัติ (Cut Silence Windows)</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="audio-lang">ภาษาพูดในวิดีโอ (Audio Language)</label>
+                    <select id="audio-lang">
+                        <option value="auto" selected>🔍 ค้นหาอัตโนมัติ (Auto Detect)</option>
+                        <option value="th">🇹🇭 ภาษาไทย (Thai)</option>
+                        <option value="ja">🇯🇵 ภาษาญี่ปุ่น (Japanese)</option>
+                        <option value="en">🇺🇸 ภาษาอังกฤษ (English)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sub-task">ภาษาซับไตเติล (Subtitles Language)</label>
+                    <select id="sub-task">
+                        <option value="transcribe" selected>📝 ซับตามเสียงพูด (Transcribe)</option>
+                        <option value="translate">🇬🇧 แปลเป็นอังกฤษ (Translate to English)</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="sub-color">โทนสีคำไฮไลต์สว่าง (Keyword Color)</label>
+                    <select id="sub-color">
+                        <option value="00D5FF" selected>💛 สีส้มอมเหลืองนีออน (Arona Orange)</option>
+                        <option value="00FF00">💚 สีเขียวนีออน (Neon Green)</option>
+                        <option value="00FFFF">💛 สีเหลืองสว่าง (Bright Yellow)</option>
+                        <option value="FF00FF">💖 สีชมพูสะท้อนแสง (Neon Pink)</option>
+                        <option value="FFFFFF">🤍 สีขาวคลาสสิก (Plain White)</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width" style="margin-top: 1rem; border-top: 1px dashed var(--surface-border); padding-top: 1rem;">
+                    <label style="margin-bottom: 0.5rem; display: block;">👥 การแยกแยะเสียงผู้พูด (Speaker Diarization)</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.8rem;">
+                        <input type="checkbox" id="diarization-checkbox" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                        <label for="diarization-checkbox" style="cursor: pointer; font-size: 0.95rem; color: #fff;">เปิดใช้งานการแยกสีตามคนพูด (Enable Speaker Separation)</label>
+                    </div>
+                    
+                    <div id="diarization-settings" style="display: none; grid-template-columns: 1fr; gap: 1rem; background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 12px; border: 1px solid var(--surface-border); margin-bottom: 1rem;">
+                        <div class="form-group">
+                            <label for="num-speakers">จำนวนคนพูดในคลิป (Number of Speakers)</label>
+                            <select id="num-speakers">
+                                <option value="0" selected>🔍 วิเคราะห์อัตโนมัติ (Auto Detect)</option>
+                                <option value="2">👥 2 คนพูด (2 Speakers)</option>
+                                <option value="3">👥 3 คนพูด (3 Speakers)</option>
+                                <option value="4">👥 4 คนพูด (4 Speakers)</option>
+                            </select>
+                        </div>
+                        
+                        <div id="speaker-colors-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%;">
+                            <div class="form-group">
+                                <label for="speaker-color-0">สีตัวอักษร คนที่ 1 (Speaker 1)</label>
+                                <select id="speaker-color-0">
+                                    <option value="FFFFFF" selected>🤍 สีขาวคลาสสิก (Plain White)</option>
+                                    <option value="00D5FF">🧡 สีส้มอมเหลืองนีออน (Arona Orange)</option>
+                                    <option value="00FFFF">💛 สีเหลืองสว่าง (Bright Yellow)</option>
+                                    <option value="00FF00">💚 สีเขียวนีออน (Neon Green)</option>
+                                    <option value="FF00FF">💖 สีชมพูสะท้อนแสง (Neon Pink)</option>
+                                    <option value="000000">🖤 สีดำ (Black)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="speaker-color-1">สีตัวอักษร คนที่ 2 (Speaker 2)</label>
+                                <select id="speaker-color-1">
+                                    <option value="00FFFF" selected>💛 สีเหลืองสว่าง (Bright Yellow)</option>
+                                    <option value="FFFFFF">🤍 สีขาวคลาสสิก (Plain White)</option>
+                                    <option value="00D5FF">🧡 สีส้มอมเหลืองนีออน (Arona Orange)</option>
+                                    <option value="00FF00">💚 สีเขียวนีออน (Neon Green)</option>
+                                    <option value="FF00FF">💖 สีชมพูสะท้อนแสง (Neon Pink)</option>
+                                    <option value="000000">🖤 สีดำ (Black)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="spk-group-2">
+                                <label for="speaker-color-2">สีตัวอักษร คนที่ 3 (Speaker 3)</label>
+                                <select id="speaker-color-2">
+                                    <option value="00FF00" selected>💚 สีเขียวนีออน (Neon Green)</option>
+                                    <option value="FFFFFF">🤍 สีขาวคลาสสิก (Plain White)</option>
+                                    <option value="00D5FF">🧡 สีส้มอมเหลืองนีออน (Arona Orange)</option>
+                                    <option value="00FFFF">💛 สีเหลืองสว่าง (Bright Yellow)</option>
+                                    <option value="FF00FF">💖 สีชมพูสะท้อนแสง (Neon Pink)</option>
+                                    <option value="000000">🖤 สีดำ (Black)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="spk-group-3">
+                                <label for="speaker-color-3">สีตัวอักษร คนที่ 4 (Speaker 4)</label>
+                                <select id="speaker-color-3">
+                                    <option value="FF00FF" selected>💖 สีชมพูสะท้อนแสง (Neon Pink)</option>
+                                    <option value="FFFFFF">🤍 สีขาวคลาสสิก (Plain White)</option>
+                                    <option value="00D5FF">🧡 สีส้มอมเหลืองนีออน (Arona Orange)</option>
+                                    <option value="00FFFF">💛 สีเหลืองสว่าง (Bright Yellow)</option>
+                                    <option value="00FF00">💚 สีเขียวนีออน (Neon Green)</option>
+                                    <option value="000000">🖤 สีดำ (Black)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group full-width" style="margin-top: 1rem; border-top: 1px dashed var(--surface-border); padding-top: 1rem;">
+                    <label style="margin-bottom: 0.5rem; display: block;">โลโก้ช่องของเซนเซ (Channel Logo Watermark - Optional)</label>
+                    <input type="file" id="logo-input" accept="image/*" style="display: none;">
+                    <button type="button" id="btn-select-logo" class="btn-add-sub" style="margin-bottom: 0px; background: rgba(0, 213, 255, 0.05); border-color: rgba(0, 213, 255, 0.2); transition: all 0.2s;">
+                        <span>🖼️</span> อัปโหลดรูปภาพโลโก้ช่อง
+                    </button>
+                    <div id="logo-preview-container" style="display: none; align-items: center; gap: 12px; margin-top: 0.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--surface-border); padding: 0.5rem 1rem; border-radius: 12px;">
+                        <img id="logo-preview" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--primary); object-fit: cover;">
+                        <div style="flex-grow: 1; text-align: left;">
+                            <div id="logo-preview-name" style="font-size: 0.85rem; font-weight: 600; color: #fff;">logo.png</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">พร้อมวางข้างบนคลิปหลักแล้วค่ะ 💙</div>
+                        </div>
+                        <button type="button" id="btn-remove-logo" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 0.9rem; font-weight: 600;">ลบออก</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Collapse Area -->
+            <div class="advanced-toggle">
+                <button class="toggle-btn" id="btn-toggle-adv">
+                    <span class="toggle-icon" id="adv-arrow">▶</span>
+                    <span>ตั้งค่าขั้นสูงอื่นๆ (Advanced Parameters)</span>
+                </button>
+
+                <div class="advanced-fields" id="advanced-box">
+                    <div class="form-group">
+                        <label for="whisper-model">ขนาดโมเดล AI (Whisper Model)</label>
+                        <select id="whisper-model">
+                            <option value="tiny">Tiny (เร็วมาก, ประหยัดพลังงาน)</option>
+                            <option value="base" selected>Base (แนะนำสำหรับทั่วไป, รวดเร็ว)</option>
+                            <option value="small">Small (แม่นยำสูง, ช้ากว่าเล็กน้อย)</option>
+                            <option value="medium">Medium (แม่นยำสูงสุด, ประมวลผลช้า)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="font-name">ชื่อฟอนต์ซับไตเติล (Font Family)</label>
+                        <input type="text" id="font-name" value="Arial Black" placeholder="เช่น Arial Black, Impact">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="silence-db">ความเงียบสูงสุดที่จะตัดทิ้ง (dB)</label>
+                        <div class="slider-box">
+                            <input type="range" id="silence-db" min="-50" max="-10" value="-30" step="5">
+                            <span class="slider-val" id="silence-db-val">-30 dB</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="silence-len">วิเคราะห์จุดเงียบต่ำสุด (วินาที)</label>
+                        <div class="slider-box">
+                            <input type="range" id="silence-len" min="0.1" max="1.5" value="0.3" step="0.1">
+                            <span class="slider-val" id="silence-len-val">0.3s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Action -->
+        <button id="btn-submit" class="btn-submit" disabled>
+            <span>⚡</span> เริ่มตัดต่อและทำซับ Shorts ทันที
+        </button>
+
+        <!-- Step 3: Progress Tracker -->
+        <section class="card progress-box" id="progress-area">
+            <div class="progress-header">
+                <div class="status-badge">
+                    <div class="spinner-ring"></div>
+                    <span id="status-text">กำลังรันโปรเซสตัดต่อวิดีโอ...</span>
+                </div>
+                <div class="percent-text" id="percent-text">10%</div>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+            <div class="steps-list">
+                <div class="step-row" id="step-upload"><div class="step-marker">1</div>อัปโหลดคลิปไฟล์เข้าระบบสำนักงาน Shittim Chest</div>
+                <div class="step-row" id="step-audio"><div class="step-marker">2</div>แกะสัญญาณช่องเสียง & ตรวจหาช่วงเวลาที่เงียบ</div>
+                <div class="step-row" id="step-cut"><div class="step-marker">3</div>ประกอบคลิปตัดเสียงเงียบและสัดส่วนเป็น 1080x1920</div>
+                <div class="step-row" id="step-whisper"><div class="step-marker">4</div>AI วิเคราะห์เนื้อเรื่องคำพูดในคลิปเพื่อทำซับไตเติล</div>
+                <div class="step-row" id="step-sub"><div class="step-marker">5</div>สร้างไฟล์ซับไตเติลและเผาลงวิดีโอ (Burn subtitles)</div>
+                <div class="step-row" id="step-done"><div class="step-marker">6</div>เสร็จสิ้นกระบวนการประมวลผล</div>
+            </div>
+        </section>
+
+        <!-- Step 4: Result Player -->
+        <section class="card result-box" id="result-area">
+            <div class="success-banner" id="success-banner-text">🎉 ทำเสร็จเรียบร้อยแล้วค่ะ Origami เซนเซ!</div>
+            <div class="player-wrapper">
+                <video id="output-video" controls></video>
+            </div>
+            <a id="btn-download" href="#" class="btn-download" download="shorts_output.mp4">
+                <span>⬇️</span> ดาวน์โหลดวิดีโอ Shorts ขนาด 1080x1920
+            </a>
+        </section>
+
+        <!-- Step 5: Subtitle Editor -->
+        <section class="card" id="editor-area" style="display: none; margin-top: 1.5rem;">
+            <div class="card-title"><span>3.</span> ✏️ แก้ไขข้อความซับไตเติล (Edit Subtitles)</div>
+            <p class="brand-sub" style="text-align: left; margin-bottom: 1.5rem;">เซนเซสามารถพิมพ์แก้ไขข้อความ เพิ่ม ลบ และปรับช่วงเวลาของวิดีโอ (วินาที) ได้ตามใจชอบเลยค่ะ เมื่อแก้ไขเสร็จแล้วกดปุ่มอัปเดตด้านล่างได้เลยน้าา 💙</p>
+            
+            <div id="subtitles-list" style="display: flex; flex-direction: column; gap: 1rem; max-height: 400px; overflow-y: auto; padding-right: 8px; margin-bottom: 1rem;">
+                <!-- Dynamically populated rows -->
+            </div>
+
+            <button id="btn-add-sub" class="btn-add-sub">
+                <span>➕</span> เพิ่มช่วงซับไตเติล (Add Subtitle Segment)
+            </button>
+
+            <button id="btn-update-sub" class="btn-submit" style="margin-top: 0.5rem;">
+                <span>🔥</span> อัปเดตซับไตเติลลงวิดีโอ (Apply Edited Subs)
+            </button>
+        </section>
+
+        <footer>
+            <p>Arona System v1.1 • พัฒนาด้วยหัวใจเพื่อช่วยเหลือ Origami เซนเซ 💙</p>
+        </footer>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const infoName = document.getElementById('info-name');
+        const infoSize = document.getElementById('info-size');
+        const btnRemove = document.getElementById('btn-remove');
+        const btnSubmit = document.getElementById('btn-submit');
+        
+        const btnToggleAdv = document.getElementById('btn-toggle-adv');
+        const advArrow = document.getElementById('adv-arrow');
+        const advancedBox = document.getElementById('advanced-box');
+        
+        const silenceDb = document.getElementById('silence-db');
+        const silenceDbVal = document.getElementById('silence-db-val');
+        const silenceLen = document.getElementById('silence-len');
+        const silenceLenVal = document.getElementById('silence-len-val');
+        
+        const progressArea = document.getElementById('progress-area');
+        const statusText = document.getElementById('status-text');
+        const percentText = document.getElementById('percent-text');
+        const progressBar = document.getElementById('progress-bar');
+        const resultArea = document.getElementById('result-area');
+        const outputVideo = document.getElementById('output-video');
+        const btnDownload = document.getElementById('btn-download');
+
+        const editorArea = document.getElementById('editor-area');
+        const subtitlesList = document.getElementById('subtitles-list');
+        const btnUpdateSub = document.getElementById('btn-update-sub');
+        const btnAddSub = document.getElementById('btn-add-sub');
+
+        const logoInput = document.getElementById('logo-input');
+        const btnSelectLogo = document.getElementById('btn-select-logo');
+        const logoPreviewContainer = document.getElementById('logo-preview-container');
+        const logoPreview = document.getElementById('logo-preview');
+        const logoPreviewName = document.getElementById('logo-preview-name');
+        const btnRemoveLogo = document.getElementById('btn-remove-logo');
+        
+        const diarizationCheckbox = document.getElementById('diarization-checkbox');
+        const diarizationSettings = document.getElementById('diarization-settings');
+        const cutSilenceCheckbox = document.getElementById('cut-silence-checkbox');
+
+        const tabLocal = document.getElementById('tab-local');
+        const tabLink = document.getElementById('tab-link');
+        const localUploadArea = document.getElementById('local-upload-area');
+        const urlDownloadArea = document.getElementById('url-download-area');
+
+        const btnFetchInfo = document.getElementById('btn-fetch-info');
+        const videoUrlInput = document.getElementById('video-url');
+        const urlVideoCard = document.getElementById('url-video-card');
+        const urlThumbnail = document.getElementById('url-thumbnail');
+        const urlIframe = document.getElementById('url-iframe');
+        const urlTitle = document.getElementById('url-title');
+        const urlUploader = document.getElementById('url-uploader');
+        const urlDuration = document.getElementById('url-duration');
+
+        const btnDownloadUrl = document.getElementById('btn-download-url');
+        const urlDownloadStatus = document.getElementById('url-download-status');
+        const urlStatusMessage = document.getElementById('url-status-message');
+        
+        const urlSliderStart = document.getElementById('url-slider-start');
+        const urlSliderEnd = document.getElementById('url-slider-end');
+        const urlSliderTrack = document.getElementById('url-slider-track');
+        const urlSliderStartLabel = document.getElementById('url-slider-start-label');
+        const urlSliderEndLabel = document.getElementById('url-slider-end-label');
+        const startTimeInput = document.getElementById('url-start-time');
+        const endTimeInput = document.getElementById('url-end-time');
+        
+
+
+        let downloadedFilename = null;
+
+        let selectedFile = null;
+        let isAdvOpen = false;
+        let currentSubtitles = [];
+        let currentFilename = "";
+
+        // Toggle Advanced Section
+        btnToggleAdv.addEventListener('click', () => {
+            isAdvOpen = !isAdvOpen;
+            if (isAdvOpen) {
+                advancedBox.style.display = 'grid';
+                advArrow.classList.add('open');
+            } else {
+                advancedBox.style.display = 'none';
+                advArrow.classList.remove('open');
+            }
+        });
+
+        // Logo Upload Listeners
+        btnSelectLogo.addEventListener('click', () => logoInput.click());
+
+        logoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const logoFile = e.target.files[0];
+                logoPreview.src = URL.createObjectURL(logoFile);
+                logoPreviewName.textContent = logoFile.name;
+                btnSelectLogo.style.display = 'none';
+                logoPreviewContainer.style.display = 'flex';
+            }
+        });
+
+        btnRemoveLogo.addEventListener('click', () => {
+            logoInput.value = '';
+            btnSelectLogo.style.display = 'flex';
+            logoPreviewContainer.style.display = 'none';
+        });
+
+        const numSpeakersSelect = document.getElementById('num-speakers');
+        const spkGroup2 = document.getElementById('spk-group-2');
+        const spkGroup3 = document.getElementById('spk-group-3');
+
+        function updateSpeakerColorVisibility() {
+            const val = parseInt(numSpeakersSelect.value);
+            if (val === 2) {
+                spkGroup2.style.display = 'none';
+                spkGroup3.style.display = 'none';
+            } else if (val === 3) {
+                spkGroup2.style.display = 'flex';
+                spkGroup3.style.display = 'none';
+            } else {
+                // val === 4 or val === 0 (Auto Detect)
+                spkGroup2.style.display = 'flex';
+                spkGroup3.style.display = 'flex';
+            }
+        }
+
+        numSpeakersSelect.addEventListener('change', updateSpeakerColorVisibility);
+        // Initialize visibility
+        updateSpeakerColorVisibility();
+
+        diarizationCheckbox.addEventListener('change', (e) => {
+            diarizationSettings.style.display = e.target.checked ? 'grid' : 'none';
+        });
+
+        // Tab switching listeners
+        tabLocal.addEventListener('click', () => {
+            tabLocal.style.background = 'var(--primary)';
+            tabLocal.style.color = 'var(--bg-color)';
+            tabLocal.style.fontWeight = '700';
+            tabLink.style.background = 'transparent';
+            tabLink.style.color = 'var(--text-main)';
+            tabLink.style.fontWeight = '600';
+            
+            localUploadArea.style.display = 'block';
+            urlDownloadArea.style.display = 'none';
+        });
+
+        tabLink.addEventListener('click', () => {
+            tabLink.style.background = 'var(--primary)';
+            tabLink.style.color = 'var(--bg-color)';
+            tabLink.style.fontWeight = '700';
+            tabLocal.style.background = 'transparent';
+            tabLocal.style.color = 'var(--text-main)';
+            tabLocal.style.fontWeight = '600';
+            
+            localUploadArea.style.display = 'none';
+            urlDownloadArea.style.display = 'block';
+        });
+
+        function getYoutubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function formatSeconds(seconds) {
+            if (isNaN(seconds) || seconds === null) return "00:00.0";
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.round((seconds % 1) * 10) / 10;
+            const decimalPart = ms.toFixed(1).substring(1); // e.g., ".5"
+            
+            if (hrs > 0) {
+                return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}${decimalPart}`;
+            }
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}${decimalPart}`;
+        }
+
+        function parseTimeString(t_str) {
+            if (!t_str) return null;
+            t_str = t_str.trim();
+            const parts = t_str.split(':');
+            try {
+                if (parts.length === 1) return parseFloat(parts[0]);
+                if (parts.length === 2) return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+                if (parts.length === 3) return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+            } catch (e) {}
+            return null;
+        }
+
+        function updateSliderTrackValues() {
+            let startVal = parseFloat(urlSliderStart.value) || 0;
+            let endVal = parseFloat(urlSliderEnd.value) || 0;
+            
+            if (startVal >= endVal) {
+                urlSliderStart.value = endVal - 0.1;
+                startVal = endVal - 0.1;
+            }
+            
+            urlSliderStartLabel.textContent = formatSeconds(startVal);
+            urlSliderEndLabel.textContent = formatSeconds(endVal);
+            startTimeInput.value = formatSeconds(startVal);
+            endTimeInput.value = formatSeconds(endVal);
+            
+            const max = parseFloat(urlSliderStart.max) || 100;
+            const percent1 = (startVal / max) * 100;
+            const percent2 = (endVal / max) * 100;
+            urlSliderTrack.style.background = `linear-gradient(to right, rgba(255, 255, 255, 0.1) ${percent1}%, var(--primary) ${percent1}%, var(--primary) ${percent2}%, rgba(255, 255, 255, 0.1) ${percent2}%)`;
+        }
+
+        function seekYoutubeVideo(seconds) {
+            if (urlIframe && urlIframe.style.display !== 'none') {
+                urlIframe.contentWindow.postMessage(JSON.stringify({
+                    event: 'command',
+                    func: 'seekTo',
+                    args: [seconds, true]
+                }), '*');
+            }
+        }
+
+        // Register slider and manual sync listeners
+        urlSliderStart.addEventListener("input", () => {
+            updateSliderTrackValues();
+            seekYoutubeVideo(parseFloat(urlSliderStart.value));
+        });
+        
+        urlSliderEnd.addEventListener("input", () => {
+            let startVal = parseFloat(urlSliderStart.value) || 0;
+            let endVal = parseFloat(urlSliderEnd.value) || 0;
+            if (endVal <= startVal) {
+                urlSliderEnd.value = startVal + 0.1;
+                endVal = startVal + 0.1;
+            }
+            updateSliderTrackValues();
+            seekYoutubeVideo(endVal);
+        });
+
+        startTimeInput.addEventListener("change", () => {
+            const secs = parseTimeString(startTimeInput.value);
+            if (secs !== null && secs >= 0 && secs < (parseFloat(urlSliderEnd.value) || 99999)) {
+                urlSliderStart.value = secs;
+                updateSliderTrackValues();
+                seekYoutubeVideo(secs);
+            } else {
+                startTimeInput.value = formatSeconds(parseFloat(urlSliderStart.value));
+            }
+        });
+
+        endTimeInput.addEventListener("change", () => {
+            const secs = parseTimeString(endTimeInput.value);
+            if (secs !== null && secs > (parseFloat(urlSliderStart.value) || 0) && secs <= (parseFloat(urlSliderEnd.max) || 99999)) {
+                urlSliderEnd.value = secs;
+                updateSliderTrackValues();
+                seekYoutubeVideo(secs);
+            } else {
+                endTimeInput.value = formatSeconds(parseFloat(urlSliderEnd.value));
+            }
+        });
+
+        // URL Fetch and Download listeners
+        btnFetchInfo.addEventListener('click', async () => {
+            const url = videoUrlInput.value.trim();
+            if (!url) {
+                alert(' Origami เซนเซคะ! รบกวนป้อนลิงก์วิดีโอก่อนดึงข้อมูลน้าา!');
+                return;
+            }
+            
+            btnFetchInfo.disabled = true;
+            btnFetchInfo.textContent = '🔍 กำลังดึง...';
+            urlVideoCard.style.display = 'none';
+            
+            try {
+                const response = await fetch('/fetch_info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'ดึงข้อมูลไม่สำเร็จค่ะ');
+                }
+                
+                const info = await response.json();
+                urlThumbnail.src = info.thumbnail || '';
+                urlTitle.textContent = info.title;
+                urlUploader.textContent = info.uploader;
+                urlDuration.textContent = info.duration;
+                document.getElementById('url-total-duration-hint').textContent = info.duration;
+                
+                // Embed youtube player if it is a youtube link
+                const youtubeId = getYoutubeId(url);
+                if (youtubeId) {
+                    urlThumbnail.style.display = 'none';
+                    urlIframe.src = `https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&origin=${window.location.origin}`;
+                    urlIframe.style.display = 'block';
+                } else {
+                    urlIframe.src = "";
+                    urlIframe.style.display = 'none';
+                    urlThumbnail.style.display = 'block';
+                }
+                
+                // Initialize Dual Slider Limits
+                const durationSec = info.duration_raw || 0;
+                urlSliderStart.max = durationSec;
+                urlSliderEnd.max = durationSec;
+                urlSliderStart.value = 0;
+                urlSliderEnd.value = durationSec;
+                updateSliderTrackValues();
+                
+                urlVideoCard.style.display = 'block';
+            } catch (e) {
+                alert(`เกิดข้อผิดพลาด: ${e.message}`);
+            } finally {
+                btnFetchInfo.disabled = false;
+                btnFetchInfo.textContent = '🔍 ดึงข้อมูล';
+            }
+        });
+
+        btnDownloadUrl.addEventListener('click', async () => {
+            const url = videoUrlInput.value.trim();
+            if (!url) return;
+            
+            const startTime = document.getElementById('url-start-time').value.trim();
+            const endTime = document.getElementById('url-end-time').value.trim();
+            
+            urlIframe.src = "";
+            urlVideoCard.style.display = 'none';
+            urlDownloadStatus.style.display = 'block';
+            urlStatusMessage.textContent = 'กำลังดาวน์โหลดไฟล์วิดีโอเข้าระบบ... ขั้นตอนนี้อาจใช้เวลาสักครู่ค่ะ 💙';
+            
+            try {
+                const response = await fetch('/download_url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        url: url,
+                        start_time: startTime,
+                        end_time: endTime
+                    })
+                });
+                
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'ดาวน์โหลดวิดีโอไม่สำเร็จค่ะ');
+                }
+                
+                const result = await response.json();
+                downloadedFilename = result.filename;
+                
+                urlStatusMessage.textContent = 'ดาวน์โหลดเสร็จสมบูรณ์แล้วค่ะ! 🎉';
+                await sleep(1000);
+                
+                selectedFile = { name: "ลิงก์วิดีโอออนไลน์", size: 0, fromUrl: true, filename: downloadedFilename };
+                infoName.textContent = `ดาวน์โหลด: ${urlTitle.textContent}`;
+                infoSize.textContent = `ความยาว: ${urlDuration.textContent}`;
+                
+                tabLocal.click();
+                dropZone.style.display = 'none';
+                fileInfo.style.display = 'flex';
+                btnSubmit.disabled = false;
+                
+            } catch (e) {
+                alert(`เกิดข้อผิดพลาดในการดาวน์โหลด: ${e.message}`);
+            } finally {
+                urlDownloadStatus.style.display = 'none';
+            }
+        });
+
+        // Sliders
+        silenceDb.addEventListener('input', (e) => {
+            silenceDbVal.textContent = `${e.target.value} dB`;
+        });
+        silenceLen.addEventListener('input', (e) => {
+            silenceLenVal.textContent = `${e.target.value}s`;
+        });
+
+        // File Selection Handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) {
+                alert(' Origami เซนเซคะ! ไฟล์นี้ไม่ใช่รูปแบบวิดีโอค่ะ รบกวนช่วยเลือกไฟล์วิดีโอด้วยน้าา!');
+                return;
+            }
+            selectedFile = file;
+            infoName.textContent = file.name;
+            infoSize.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            
+            dropZone.style.display = 'none';
+            fileInfo.style.display = 'flex';
+            btnSubmit.disabled = false;
+        }
+
+        btnRemove.addEventListener('click', () => {
+            selectedFile = null;
+            downloadedFilename = null;
+            fileInput.value = '';
+            videoUrlInput.value = '';
+            document.getElementById('url-start-time').value = '';
+            document.getElementById('url-end-time').value = '';
+            urlIframe.src = "";
+            urlVideoCard.style.display = 'none';
+            dropZone.style.display = 'block';
+            fileInfo.style.display = 'none';
+            btnSubmit.disabled = true;
+            resultArea.style.display = 'none';
+        });
+
+        // Run Processing Pipeline
+        btnSubmit.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            resultArea.style.display = 'none';
+            btnSubmit.disabled = true;
+            progressArea.style.display = 'block';
+            
+            let videoFilename = "";
+            let logoFilename = null;
+
+            try {
+                if (selectedFile.fromUrl) {
+                    videoFilename = selectedFile.filename;
+                    // If a logo is selected locally, we should upload it!
+                    if (logoInput.files.length > 0) {
+                        updateSteps('upload');
+                        statusText.textContent = "กำลังอัปโหลดรูปภาพโลโก้ช่อง...";
+                        const logoFormData = new FormData();
+                        // Dummy empty video to pass backend validation
+                        logoFormData.append('video', new Blob(), 'dummy.mp4');
+                        logoFormData.append('logo', logoInput.files[0]);
+                        
+                        const logoUploadResponse = await fetch('/upload', {
+                            method: 'POST',
+                            body: logoFormData
+                        });
+                        if (logoUploadResponse.ok) {
+                            const logoUploadData = await logoUploadResponse.json();
+                            logoFilename = logoUploadData.logo_filename;
+                        }
+                    }
+                } else {
+                    updateSteps('upload');
+                    statusText.textContent = "กำลังอัปโหลดวิดีโอ...";
+                    percentText.textContent = "10%";
+                    progressBar.style.width = "10%";
+
+                    const formData = new FormData();
+                    formData.append('video', selectedFile);
+                    if (logoInput.files.length > 0) {
+                        formData.append('logo', logoInput.files[0]);
+                    }
+                    formData.append('model', document.getElementById('whisper-model').value);
+                    formData.append('color', document.getElementById('sub-color').value);
+                    formData.append('noise_db', silenceDb.value);
+                    formData.append('min_silence_len', silenceLen.value);
+                    formData.append('font_name', document.getElementById('font-name').value);
+                    formData.append('language', document.getElementById('audio-lang').value);
+                    formData.append('task', document.getElementById('sub-task').value);
+
+                    const uploadResponse = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) {
+                        throw new Error('อัปโหลดไฟล์วิดีโอไม่สำเร็จค่ะ');
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    videoFilename = uploadData.filename;
+                    logoFilename = uploadData.logo_filename;
+                }
+
+                updateSteps('audio');
+                statusText.textContent = "วิเคราะห์คลื่นความเงียบ...";
+                percentText.textContent = "30%";
+                progressBar.style.width = "30%";
+
+                const processResponse = await fetch('/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: videoFilename,
+                        logo_filename: logoFilename,
+                        model: document.getElementById('whisper-model').value,
+                        color: document.getElementById('sub-color').value,
+                        noise_db: silenceDb.value,
+                        min_silence_len: silenceLen.value,
+                        font_name: document.getElementById('font-name').value,
+                        language: document.getElementById('audio-lang').value,
+                        task: document.getElementById('sub-task').value,
+                        cut_silence: cutSilenceCheckbox.checked,
+                        diarization: diarizationCheckbox.checked,
+                        num_speakers: parseInt(numSpeakersSelect.value),
+                        speaker_color_0: document.getElementById('speaker-color-0').value,
+                        speaker_color_1: document.getElementById('speaker-color-1').value,
+                        speaker_color_2: document.getElementById('speaker-color-2').value,
+                    })
+                });
+
+                if (!processResponse.ok) {
+                    const errData = await processResponse.json();
+                    throw new Error(errData.error || 'การตัดต่อเกิดข้อผิดพลาดค่ะ');
+                }
+
+                updateSteps('cut');
+                statusText.textContent = "กำลังปรับขนาดเป็น 1080x1920 และตัดเสียงเงียบ...";
+                percentText.textContent = "50%";
+                progressBar.style.width = "50%";
+                await sleep(1500);
+
+                updateSteps('whisper');
+                statusText.textContent = "กำลังถอดคำพูดจาก AI และประมวลผลคำแปลภาษา (ขั้นตอนนี้ใช้เวลานิดนึง)...";
+                percentText.textContent = "75%";
+                progressBar.style.width = "75%";
+
+                const resultData = await processResponse.json();
+
+                updateSteps('sub');
+                statusText.textContent = "กำลังนำเข้าซับแบบเน้นคำและบันทึกผลลัพธ์...";
+                percentText.textContent = "90%";
+                progressBar.style.width = "90%";
+                await sleep(1500);
+
+                updateSteps('done');
+                statusText.textContent = "ตัดต่อเสร็จสมบูรณ์ค่ะ!";
+                percentText.textContent = "100%";
+                progressBar.style.width = "100%";
+                await sleep(800);
+
+                progressArea.style.display = 'none';
+                btnSubmit.disabled = false;
+
+                outputVideo.src = `/outputs/${resultData.output_file}?t=${new Date().getTime()}`;
+                btnDownload.href = `/outputs/${resultData.output_file}`;
+                btnDownload.style.display = 'none'; // Hide download button until subtitles are burned
+                document.getElementById('success-banner-text').textContent = "📢 วิเคราะห์เสียงสำเร็จแล้วค่ะ! แก้ไขคำพูดและเลือกสีซับไตเติ้ลตามใจชอบด้านล่าง แล้วกด 'อัปเดตซับไตเติ้ลลงวิดีโอ' เพื่อดูซับไตเติ้ลจริงในวิดีโอนะค้าาา 💙";
+                resultArea.style.display = 'block';
+                
+                currentFilename = resultData.filename;
+                currentSubtitles = resultData.subtitles;
+                
+                if (currentSubtitles && currentSubtitles.length > 0) {
+                    renderSubtitleEditor(currentSubtitles);
+                    editorArea.style.display = 'block';
+                } else {
+                    editorArea.style.display = 'none';
+                }
+                
+                // Scroll down to preview area
+                resultArea.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                alert(`เกิดข้อผิดพลาด: ${error.message}`);
+                progressArea.style.display = 'none';
+                btnSubmit.disabled = false;
+            }
+        });
+
+        function renderSubtitleEditor(subtitles) {
+            subtitlesList.innerHTML = '';
+            subtitles.forEach((sub, index) => {
+                appendSubtitleRow(sub, index);
+            });
+        }
+
+        function appendSubtitleRow(sub, index) {
+            const row = document.createElement('div');
+            row.className = 'sub-row';
+            
+            const speaker = sub.speaker !== undefined ? sub.speaker : 0;
+            const subColor = sub.color || '#ffffff';
+            
+            row.innerHTML = `
+                <div class="sub-row-header">
+                    <span>ช่วงที่ #${index + 1}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="time-input-group">
+                            <label>ผู้พูด:</label>
+                            <select class="time-num-input speaker-select" style="width: 100px; padding: 0.2rem 0.4rem; font-size: 0.8rem; height: auto;">
+                                <option value="0" ${speaker === 0 ? 'selected' : ''}>👤 คนที่ 1</option>
+                                <option value="1" ${speaker === 1 ? 'selected' : ''}>👥 คนที่ 2</option>
+                                <option value="2" ${speaker === 2 ? 'selected' : ''}>👥 คนที่ 3</option>
+                                <option value="3" ${speaker === 3 ? 'selected' : ''}>👥 คนที่ 4</option>
+                            </select>
+                        </div>
+                        <div class="time-input-group">
+                            <label>สีซับ:</label>
+                            <input type="color" class="time-num-input sub-color-picker" style="width: 45px; height: 30px; padding: 2px; cursor: pointer; border: 1px solid rgba(255,255,255,0.15);" value="${subColor}">
+                        </div>
+                        <div class="time-input-group">
+                            <label>เริ่ม (s):</label>
+                            <input type="number" class="time-num-input time-start-input" step="0.1" min="0" value="${parseFloat(sub.start).toFixed(2)}">
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-input-wrapper">
+                    <input type="text" class="sub-input" value="${escapeHtml(sub.text)}">
+                    <button class="btn-delete-sub" title="ลบช่วงเวลานี้">🗑️</button>
+                </div>
+            `;
+            
+            const btnDelete = row.querySelector('.btn-delete-sub');
+            btnDelete.addEventListener('click', () => {
+                row.remove();
+                reindexRows();
+            });
+            
+            subtitlesList.appendChild(row);
+        }
+
+        function reindexRows() {
+            const rows = subtitlesList.querySelectorAll('.sub-row');
+            rows.forEach((row, index) => {
+                const headerText = row.querySelector('.sub-row-header > span');
+                headerText.textContent = `ช่วงที่ #${index + 1}`;
+            });
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        btnAddSub.addEventListener('click', () => {
+            let defaultStart = 0.0;
+            const rows = subtitlesList.querySelectorAll('.sub-row');
+            if (rows.length > 0) {
+                const lastRow = rows[rows.length - 1];
+                const lastEndInput = lastRow.querySelector('.time-end-input');
+                const lastEndVal = parseFloat(lastEndInput.value);
+                if (!isNaN(lastEndVal)) {
+                    defaultStart = parseFloat((lastEndVal + 0.1).toFixed(2));
+                }
+            }
+            const defaultEnd = parseFloat((defaultStart + 1.5).toFixed(2));
+            
+            const newSub = {
+                start: defaultStart,
+                end: defaultEnd,
+                text: 'ซับไตเติลใหม่'
+            };
+            
+            appendSubtitleRow(newSub, rows.length);
+            subtitlesList.scrollTop = subtitlesList.scrollHeight;
+        });
+
+        btnUpdateSub.addEventListener('click', async () => {
+            if (!currentFilename) return;
+
+            btnUpdateSub.disabled = true;
+            btnUpdateSub.innerHTML = '<span>⚡</span> กำลังเผาซับไตเติลใหม่...';
+
+            const rows = subtitlesList.querySelectorAll('.sub-row');
+            const updatedSubtitles = [];
+            rows.forEach(row => {
+                const startInput = row.querySelector('.time-start-input');
+                const endInput = row.querySelector('.time-end-input');
+                const textInput = row.querySelector('.sub-input');
+                const speakerSelect = row.querySelector('.speaker-select');
+                const colorPicker = row.querySelector('.sub-color-picker');
+                
+                const start = parseFloat(startInput.value);
+                const end = parseFloat(endInput.value);
+                const text = textInput.value;
+                const speaker = parseInt(speakerSelect.value) || 0;
+                const color = colorPicker ? colorPicker.value : '#ffffff';
+                
+                if (!isNaN(start) && !isNaN(end)) {
+                    updatedSubtitles.push({
+                        start: start,
+                        end: end,
+                        text: text,
+                        speaker: speaker,
+                        color: color
+                    });
+                }
+            });
+
+            // Sort by start time in case user edited them out of order
+            updatedSubtitles.sort((a, b) => a.start - b.start);
+
+            try {
+                const burnResponse = await fetch('/burn', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: currentFilename,
+                        subtitles: updatedSubtitles,
+                        color: document.getElementById('sub-color').value,
+                        font_name: document.getElementById('font-name').value,
+                        speaker_colors: {
+                            0: document.getElementById('speaker-color-0').value,
+                            1: document.getElementById('speaker-color-1').value,
+                            2: document.getElementById('speaker-color-2').value,
+                            3: document.getElementById('speaker-color-3').value
+                        }
+                    })
+                });
+
+                if (!burnResponse.ok) {
+                    const errData = await burnResponse.json();
+                    throw new Error(errData.error || 'การอัปเดตซับไตเติลล้มเหลวค่ะ');
+                }
+
+                const burnData = await burnResponse.json();
+                
+                outputVideo.src = `/outputs/${burnData.output_file}?t=${new Date().getTime()}`;
+                btnDownload.href = `/outputs/${burnData.output_file}`;
+                btnDownload.style.display = 'inline-flex'; // Show download button
+                document.getElementById('success-banner-text').textContent = "🎉 เผาซับไตเติลสำเร็จเรียบร้อยแล้วค่ะ Origami เซนเซ!";
+                
+                alert('🎉 เผาซับไตเติลลงในวิดีโอเรียบร้อยแล้วค่ะ Origami เซนเซ!');
+                resultArea.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                alert(`เกิดข้อผิดพลาด: ${error.message}`);
+            } finally {
+                btnUpdateSub.disabled = false;
+                btnUpdateSub.innerHTML = '<span>🔥</span> อัปเดตซับไตเติลลงวิดีโอ (Apply Edited Subs)';
+            }
+        });
+
+        function updateSteps(phase) {
+            const steps = {
+                upload: ['step-upload'],
+                audio: ['step-upload', 'step-audio'],
+                cut: ['step-upload', 'step-audio', 'step-cut'],
+                whisper: ['step-upload', 'step-audio', 'step-cut', 'step-whisper'],
+                sub: ['step-upload', 'step-audio', 'step-cut', 'step-whisper', 'step-sub'],
+                done: ['step-upload', 'step-audio', 'step-cut', 'step-whisper', 'step-sub', 'step-done']
+            };
+
+            document.querySelectorAll('.step-row').forEach(item => {
+                item.className = 'step-row';
+            });
+
+            const doneSteps = steps[phase].slice(0, -1);
+            doneSteps.forEach(id => {
+                document.getElementById(id).classList.add('done');
+            });
+
+            const activeStep = steps[phase][steps[phase].length - 1];
+            if (activeStep) {
+                document.getElementById(activeStep).classList.add('active');
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
