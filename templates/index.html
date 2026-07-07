@@ -1735,6 +1735,9 @@
                             <label>เริ่ม (s):</label>
                             <input type="number" class="time-num-input time-start-input" step="0.1" min="0" value="${parseFloat(sub.start).toFixed(2)}">
                         </div>
+                        <div class="time-input-group">
+                            <label>สิ้นสุด (s):</label>
+                            <input type="number" class="time-num-input time-end-input" step="0.1" min="0" value="${parseFloat(sub.end).toFixed(2)}">
                         </div>
                     </div>
                 </div>
@@ -1748,6 +1751,82 @@
             btnDelete.addEventListener('click', () => {
                 row.remove();
                 reindexRows();
+            });
+
+            const speakerSelect = row.querySelector('.speaker-select');
+            const colorPicker = row.querySelector('.sub-color-picker');
+
+            // Event listener for color picker change
+            colorPicker.addEventListener('input', (e) => {
+                const newColor = e.target.value; // e.g. '#ff0055'
+                const currentSpeaker = parseInt(speakerSelect.value) || 0;
+
+                // Rule 1: Change color of all other rows that have the same speaker selected
+                const allRows = subtitlesList.querySelectorAll('.sub-row');
+                allRows.forEach(otherRow => {
+                    const otherSpeakerSelect = otherRow.querySelector('.speaker-select');
+                    const otherColorPicker = otherRow.querySelector('.sub-color-picker');
+                    if (otherSpeakerSelect && otherColorPicker) {
+                        const otherSpeaker = parseInt(otherSpeakerSelect.value) || 0;
+                        if (otherSpeaker === currentSpeaker) {
+                            otherColorPicker.value = newColor;
+                        }
+                    }
+                });
+
+                // Also update the global speaker color input if it exists
+                const cleanHex = newColor.replace('#', '').toUpperCase();
+                const globalColorSelect = document.getElementById(`speaker-color-${currentSpeaker}`);
+                if (globalColorSelect) {
+                    let hasOption = false;
+                    for (let opt of globalColorSelect.options) {
+                        if (opt.value === cleanHex) {
+                            hasOption = true;
+                            break;
+                        }
+                    }
+                    if (!hasOption) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = cleanHex;
+                        newOpt.textContent = `🎨 สีส่วนตัว (${newColor})`;
+                        globalColorSelect.appendChild(newOpt);
+                    }
+                    globalColorSelect.value = cleanHex;
+                }
+            });
+
+            // Event listener for speaker select change
+            speakerSelect.addEventListener('change', (e) => {
+                const currentSpeaker = parseInt(e.target.value) || 0;
+
+                // Rule 2: Automatically update color picker to match the color of that selected speaker
+                let matchedColor = null;
+                const allRows = subtitlesList.querySelectorAll('.sub-row');
+                for (let otherRow of allRows) {
+                    if (otherRow === row) continue; // skip self
+                    const otherSpeakerSelect = otherRow.querySelector('.speaker-select');
+                    const otherColorPicker = otherRow.querySelector('.sub-color-picker');
+                    if (otherSpeakerSelect && otherColorPicker) {
+                        const otherSpeaker = parseInt(otherSpeakerSelect.value) || 0;
+                        if (otherSpeaker === currentSpeaker) {
+                            matchedColor = otherColorPicker.value;
+                            break;
+                        }
+                    }
+                }
+
+                if (!matchedColor) {
+                    const globalColorSelect = document.getElementById(`speaker-color-${currentSpeaker}`);
+                    if (globalColorSelect && globalColorSelect.value) {
+                        matchedColor = '#' + globalColorSelect.value.toLowerCase();
+                    } else {
+                        matchedColor = '#ffffff';
+                    }
+                }
+
+                if (colorPicker && matchedColor) {
+                    colorPicker.value = matchedColor;
+                }
             });
             
             subtitlesList.appendChild(row);
@@ -1866,6 +1945,27 @@
             } finally {
                 btnUpdateSub.disabled = false;
                 btnUpdateSub.innerHTML = '<span>🔥</span> อัปเดตซับไตเติลลงวิดีโอ (Apply Edited Subs)';
+            }
+        });
+
+        // Global speaker color dropdown listeners to sync with subtitle editor rows
+        [0, 1, 2, 3].forEach(speakerIndex => {
+            const globalSelect = document.getElementById(`speaker-color-${speakerIndex}`);
+            if (globalSelect) {
+                globalSelect.addEventListener('change', (e) => {
+                    const newColor = '#' + e.target.value.toLowerCase();
+                    const allRows = subtitlesList.querySelectorAll('.sub-row');
+                    allRows.forEach(row => {
+                        const speakerSelect = row.querySelector('.speaker-select');
+                        const colorPicker = row.querySelector('.sub-color-picker');
+                        if (speakerSelect && colorPicker) {
+                            const speaker = parseInt(speakerSelect.value) || 0;
+                            if (speaker === speakerIndex) {
+                                colorPicker.value = newColor;
+                            }
+                        }
+                    });
+                });
             }
         });
 
