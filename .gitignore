@@ -10,3 +10,6 @@ outputs/*
 *.srt
 *.log
 .DS_Store
+cookies.txt
+cookies_*.txt
+
