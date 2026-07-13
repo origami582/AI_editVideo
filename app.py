@@ -5,6 +5,12 @@ import shutil
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Import our video processor functions
 import video_processor
 
@@ -60,6 +66,81 @@ def google_translate(text, source_lang='auto', target_lang='en'):
     except Exception as e:
         print(f"Translation error: {e}")
         return text
+
+def generate_shorts_titles(transcription_text):
+    import urllib.request
+    import json
+    import re
+    
+    fallback_titles = [
+        "คลิป Shorts สุดเจ๋ง 🎥",
+        "ไอเดียยอดฮิตวันนี้ ✨",
+        "ห้ามพลาดสิ่งนี้! 🔥",
+        "ความจริงที่คุณต้องรู้ 😱",
+        "เคล็ดลับดีๆ ที่ควรรู้! 💡"
+    ]
+    
+    if not transcription_text or not transcription_text.strip():
+        return fallback_titles
+        
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        print("Warning: GEMINI_API_KEY environment variable not set. Using fallback titles.")
+        words = [w.strip() for w in transcription_text.split() if w.strip()]
+        if words:
+            phrase = " ".join(words[:5])
+            if len(phrase) > 30:
+                phrase = phrase[:27] + "..."
+            return [f"✨ {phrase}", f"🔥 {phrase}!!", f"😱 {phrase}?", f"💡 {phrase} #Shorts", "คลิปเด็ดห้ามพลาด! 🎥"]
+        return fallback_titles
+
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        
+        prompt = (
+            "You are a YouTube Shorts title expert. Given the following transcript from a video, "
+            "generate exactly 5 catchy, engaging, and click-worthy titles for a YouTube Shorts/TikTok video. "
+            "The titles should be in the same language as the transcript (usually Thai or English), short, punchy, "
+            "and include relevant emojis. Output MUST be a valid JSON array of 5 strings, for example: "
+            '["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"]. '
+            "Do not include any markdown styling like ```json or ```, just the raw JSON text."
+        )
+        
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": f"{prompt}\n\nTranscript: {transcription_text}"
+                }]
+            }]
+        }
+        
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            candidates = res_data.get('candidates', [])
+            if candidates:
+                content_text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '').strip()
+                if content_text.startswith("```"):
+                    content_text = re.sub(r'^```(?:json)?\s*', '', content_text)
+                    content_text = re.sub(r'\s*```$', '', content_text)
+                content_text = content_text.strip()
+                titles = json.loads(content_text)
+                if isinstance(titles, list) and len(titles) >= 5:
+                    return titles[:5]
+                elif isinstance(titles, list) and len(titles) > 0:
+                    while len(titles) < 5:
+                        titles.append(fallback_titles[len(titles)])
+                    return titles
+    except Exception as e:
+        print(f"Error generating titles via Gemini API: {e}")
+        
+    return fallback_titles
 
 @app.route('/')
 def index():
@@ -451,11 +532,16 @@ def process_video():
                     'color': html_color
                 })
                 
+        # Generate suggested titles from full transcript
+        full_transcript = " ".join([item['text'] for item in sub_list])
+        suggested_titles = generate_shorts_titles(full_transcript)
+        
         return jsonify({
             'success': True,
             'output_file': f"shorts_{base_name}.mp4",
             'filename': filename,
-            'subtitles': sub_list
+            'subtitles': sub_list,
+            'suggested_titles': suggested_titles
         })
         
     except Exception as e:
@@ -576,7 +662,16 @@ def burn_edited_subtitles():
         print("Re-burning subtitles...")
         video_processor.burn_subtitles(cut_video_path, ass_path, final_output_path, ffmpeg_bin)
         
-        return jsonify({'success': True, 'output_file': f"shorts_{base_name}.mp4"})
+        # Re-generate suggested titles from updated subtitles list
+        sub_texts = [group.get('text', '').strip() for group in subtitles]
+        full_transcript = " ".join(sub_texts)
+        suggested_titles = generate_shorts_titles(full_transcript)
+        
+        return jsonify({
+            'success': True, 
+            'output_file': f"shorts_{base_name}.mp4",
+            'suggested_titles': suggested_titles
+        })
         
     except Exception as e:
         safe_err = str(e).encode('ascii', errors='backslashreplace').decode('ascii')
@@ -586,6 +681,26 @@ def burn_edited_subtitles():
 @app.route('/outputs/<path:filename>')
 def serve_output(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
+
+@app.route('/download/<path:filename>')
+def download_file(filename):
+    custom_title = request.args.get('title', '')
+    if not custom_title:
+        return send_from_directory(OUTPUT_FOLDER, filename, as_attachment=True)
+    
+    # Clean the title to be a safe filename (remove illegal chars: \ / : * ? " < > |)
+    import re
+    safe_title = re.sub(r'[\\/*?:"<>|]', '', custom_title).strip()
+    if not safe_title:
+        safe_title = "shorts_video"
+        
+    download_filename = f"{safe_title}.mp4"
+    return send_from_directory(
+        OUTPUT_FOLDER, 
+        filename, 
+        as_attachment=True, 
+        download_name=download_filename
+    )
 
 @app.route('/uploads/<path:filename>')
 def serve_upload(filename):

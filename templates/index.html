@@ -769,6 +769,91 @@
             color: var(--primary);
             font-family: 'Outfit', sans-serif;
         }
+
+        /* Title Selection UI */
+        .title-selection-box {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--surface-border);
+            border-radius: 20px;
+            text-align: left;
+        }
+        .title-selection-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .title-option {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .title-option:hover {
+            background: rgba(var(--primary-rgb), 0.05);
+            border-color: rgba(var(--primary-rgb), 0.2);
+        }
+        .title-option.selected {
+            background: rgba(var(--primary-rgb), 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.15);
+        }
+        .title-option input[type="radio"] {
+            margin-right: 0.75rem;
+            accent-color: var(--primary);
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .title-option-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+            flex-grow: 1;
+        }
+        .custom-title-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            align-items: center;
+            width: 100%;
+        }
+        .custom-title-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--surface-border);
+            border-radius: 10px;
+            padding: 0.6rem 0.8rem;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .custom-title-input:focus {
+            border-color: var(--primary);
+        }
+        .custom-title-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-download.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: #4b5563;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -1087,7 +1172,27 @@
             <div class="player-wrapper">
                 <video id="output-video" controls></video>
             </div>
-            <a id="btn-download" href="#" class="btn-download" download="shorts_output.mp4">
+            
+            <!-- Title Selection for Shorts -->
+            <div class="title-selection-box" id="title-selection-area" style="display: none;">
+                <div class="title-selection-title">
+                    <span>🎬</span> เลือกชื่อคลิป Shorts ก่อนดาวน์โหลด (คลิกเลือกชื่อด้านล่าง)
+                </div>
+                <div id="suggested-titles-container">
+                    <!-- Suggested titles will be injected here -->
+                </div>
+                <div class="title-option" id="custom-title-option">
+                    <input type="radio" id="title-opt-custom" name="selected-shorts-title" value="custom">
+                    <div class="title-option-text" style="display: flex; flex-direction: column; width: 100%;">
+                        <label for="title-opt-custom" style="cursor: pointer; font-weight: 600;">✍️ ระบุชื่อเรื่องด้วยตัวเอง</label>
+                        <div class="custom-title-wrapper">
+                            <input type="text" id="input-custom-title" class="custom-title-input" placeholder="พิมพ์ชื่อคลิปที่เซนเซต้องการตรงนี้..." disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a id="btn-download" href="#" class="btn-download disabled" download="shorts_output.mp4">
                 <span>⬇️</span> ดาวน์โหลดวิดีโอ Shorts ขนาด 1080x1920
             </a>
         </section>
@@ -1676,6 +1781,7 @@
                 outputVideo.src = `/outputs/${resultData.output_file}?t=${new Date().getTime()}`;
                 btnDownload.href = `/outputs/${resultData.output_file}`;
                 btnDownload.style.display = 'none'; // Hide download button until subtitles are burned
+                document.getElementById('title-selection-area').style.display = 'none'; // Hide title selection initially
                 document.getElementById('success-banner-text').textContent = "📢 วิเคราะห์เสียงสำเร็จแล้วค่ะ! แก้ไขคำพูดและเลือกสีซับไตเติ้ลตามใจชอบด้านล่าง แล้วกด 'อัปเดตซับไตเติ้ลลงวิดีโอ' เพื่อดูซับไตเติ้ลจริงในวิดีโอนะค้าาา 💙";
                 resultArea.style.display = 'block';
                 
@@ -1932,7 +2038,8 @@
                 const burnData = await burnResponse.json();
                 
                 outputVideo.src = `/outputs/${burnData.output_file}?t=${new Date().getTime()}`;
-                btnDownload.href = `/outputs/${burnData.output_file}`;
+                // Set up the title selection box and wire it to the download button
+                setupTitleSelection(burnData.suggested_titles, burnData.output_file);
                 btnDownload.style.display = 'inline-flex'; // Show download button
                 document.getElementById('success-banner-text').textContent = "🎉 เผาซับไตเติลสำเร็จเรียบร้อยแล้วค่ะ Origami เซนเซ!";
                 
@@ -1967,6 +2074,121 @@
                 });
             }
         });
+
+        let currentSuggestedTitles = [];
+        let finalOutputFile = '';
+
+        function setupTitleSelection(suggestedTitles, outputFile) {
+            currentSuggestedTitles = suggestedTitles || [];
+            finalOutputFile = outputFile || '';
+            
+            const selectionArea = document.getElementById('title-selection-area');
+            const container = document.getElementById('suggested-titles-container');
+            const downloadBtn = document.getElementById('btn-download');
+            const customRadio = document.getElementById('title-opt-custom');
+            const customInput = document.getElementById('input-custom-title');
+            
+            // Clear previous suggestions
+            container.innerHTML = '';
+            
+            // Uncheck custom and disable input
+            customRadio.checked = false;
+            customInput.value = '';
+            customInput.disabled = true;
+            
+            // Lock download button by default
+            downloadBtn.classList.add('disabled');
+            downloadBtn.removeAttribute('href');
+            
+            if (currentSuggestedTitles.length === 0) {
+                currentSuggestedTitles = [
+                    "คลิป Shorts สุดเจ๋ง 🎥",
+                    "ไอเดียยอดฮิตวันนี้ ✨",
+                    "ห้ามพลาดสิ่งนี้! 🔥",
+                    "ความจริงที่คุณต้องรู้ 😱",
+                    "เคล็ดลับดีๆ ที่ควรรู้! 💡"
+                ];
+            }
+            
+            // Render suggested titles
+            currentSuggestedTitles.forEach((title, idx) => {
+                const optId = `title-opt-${idx}`;
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'title-option';
+                optionDiv.innerHTML = `
+                    <input type="radio" id="${optId}" name="selected-shorts-title" value="${encodeURIComponent(title)}">
+                    <div class="title-option-text">
+                        <label for="${optId}" style="cursor: pointer; font-weight: 500;">${title}</label>
+                    </div>
+                `;
+                container.appendChild(optionDiv);
+            });
+            
+            // Show the selection area
+            selectionArea.style.display = 'block';
+            
+            // Add click styling & radio state change listeners
+            const allOptions = selectionArea.querySelectorAll('.title-option');
+            
+            function updateSelectionUI() {
+                allOptions.forEach(opt => {
+                    const radio = opt.querySelector('input[type="radio"]');
+                    if (radio && radio.checked) {
+                        opt.classList.add('selected');
+                    } else {
+                        opt.classList.remove('selected');
+                    }
+                });
+                
+                // Toggle custom input enablement
+                if (customRadio.checked) {
+                    customInput.disabled = false;
+                    updateDownloadLink();
+                } else {
+                    customInput.disabled = true;
+                    updateDownloadLink();
+                }
+            }
+            
+            function updateDownloadLink() {
+                let selectedTitle = '';
+                const checkedRadio = selectionArea.querySelector('input[name="selected-shorts-title"]:checked');
+                if (checkedRadio) {
+                    if (checkedRadio.value === 'custom') {
+                        selectedTitle = customInput.value.trim();
+                    } else {
+                        selectedTitle = decodeURIComponent(checkedRadio.value);
+                    }
+                }
+                
+                if (selectedTitle) {
+                    downloadBtn.classList.remove('disabled');
+                    downloadBtn.href = `/download/${finalOutputFile}?title=${encodeURIComponent(selectedTitle)}`;
+                } else {
+                    downloadBtn.classList.add('disabled');
+                    downloadBtn.removeAttribute('href');
+                }
+            }
+            
+            allOptions.forEach(opt => {
+                const radio = opt.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.addEventListener('change', updateSelectionUI);
+                }
+                
+                opt.addEventListener('click', (e) => {
+                    if (e.target !== radio && e.target !== customInput && !customInput.contains(e.target)) {
+                        if (radio) {
+                            radio.checked = true;
+                            radio.dispatchEvent(new Event('change'));
+                        }
+                    }
+                });
+            });
+            
+            // Custom text input listener to update download url in real-time
+            customInput.addEventListener('input', updateDownloadLink);
+        }
 
         function updateSteps(phase) {
             const steps = {
